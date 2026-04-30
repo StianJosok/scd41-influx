@@ -1,6 +1,7 @@
 services:
   scd41_influx:
     image: stianjosok/scd41-influx:latest
+    container_name: scd41-influx
     devices:
       - /dev/i2c-1:/dev/i2c-1
     environment:
@@ -15,9 +16,3 @@ services:
     group_add:
       - "${I2C_GID:-994}"
     restart: unless-stopped
-    networks:
-      - backend
-
-networks:
-  backend:
-    external: true
