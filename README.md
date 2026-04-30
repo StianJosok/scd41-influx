@@ -2,7 +2,7 @@
 
 Reads CO2, temperature, and humidity from an SCD41 sensor over I2C and writes the data to InfluxDB v2.
 
-Supports `linux/amd64` and `linux/arm64` (Raspberry Pi 4/5).
+Supports `linux/amd64` and `linux/arm64`
 
 ## Prerequisites
 
