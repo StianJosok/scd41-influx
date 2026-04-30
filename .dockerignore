@@ -1,4 +1,4 @@
 .env
 *.md
-info.txt
+.git/
 docker-compose.yaml

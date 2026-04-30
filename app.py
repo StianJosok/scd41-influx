@@ -1,4 +1,6 @@
 import os
+import signal
+import sys
 import time
 import logging
 from datetime import datetime, timezone
@@ -41,6 +43,8 @@ def utc_now():
 
 
 def main():
+    signal.signal(signal.SIGTERM, lambda _sig, _frame: sys.exit(0))
+
     last_daily_log = 0.0
     last_error_log = 0.0
     first_ok_logged = False
