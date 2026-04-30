@@ -16,6 +16,8 @@ services:
       # App
       INTERVAL_SEC: "10"
       MEASUREMENT: "scd41"
+    group_add:
+      - "${I2C_GID:-994}"
     restart: unless-stopped
     networks:
       - backend

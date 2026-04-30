@@ -1,6 +1,6 @@
 import os
 import signal
-import sys
+import threading
 import time
 import logging
 from datetime import datetime, timezone
@@ -43,7 +43,9 @@ def utc_now():
 
 
 def main():
-    signal.signal(signal.SIGTERM, lambda _sig, _frame: sys.exit(0))
+    stop = threading.Event()
+    signal.signal(signal.SIGTERM, lambda _sig, _frame: stop.set())
+    signal.signal(signal.SIGINT, lambda _sig, _frame: stop.set())
 
     last_daily_log = 0.0
     last_error_log = 0.0
@@ -78,8 +80,7 @@ def main():
 
                 last_daily_log = time.monotonic()
 
-                while True:
-                    time.sleep(INTERVAL_SEC)
+                while not stop.wait(INTERVAL_SEC):
 
                     try:
                         co2, temperature, humidity = scd4x.read_measurement()
