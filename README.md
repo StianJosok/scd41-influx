@@ -70,19 +70,20 @@ Silence after that is normal — readings are written to InfluxDB every interval
 | `INFO daily ok: co2=...` | Once every 24 hours |
 | `WARNING error: ...` | On read/write failure — at most once per 5 minutes |
 
-Set `LOG_LEVEL=DEBUG` in `.env` to log every reading as it is written.
+Set `LOG_LEVEL` to `DEBUG` in `docker-compose.yaml` to log every reading as it is written.
 
 ## Environment variables
 
-| Variable | Required | Default | Description |
-|---|---|---|---|
-| `INFLUX_URL` | yes | — | InfluxDB v2 URL |
-| `INFLUX_TOKEN` | yes | — | API token |
-| `INFLUX_ORG` | yes | — | Organisation name |
-| `INFLUX_BUCKET` | yes | — | Bucket name |
-| `I2C_GID` | no | `994` | Host GID for `/dev/i2c-1` |
-| `I2C_DEV` | no | `/dev/i2c-1` | I2C device path |
-| `INTERVAL_SEC` | no | `10` | Seconds between readings |
-| `MEASUREMENT` | no | `scd41` | InfluxDB measurement name |
-| `LOCATION` | no | — | Optional location tag on data points |
-| `LOG_LEVEL` | no | `INFO` | Set to `DEBUG` to log every reading |
+| Variable | Description |
+|---|---|
+| `INFLUX_URL` | InfluxDB v2 URL |
+| `INFLUX_TOKEN` | API token |
+| `INFLUX_ORG` | Organisation name |
+| `INFLUX_BUCKET` | Bucket name |
+| `I2C_GID` | Host GID for the i2c device (default: `994`) |
+| `INTERVAL_SEC` | Seconds between readings — min 5, sensor limitation (default: `10`) |
+| `MEASUREMENT` | InfluxDB measurement name (default: `scd41`) |
+| `INFLUX_BATCH_SIZE` | Points to buffer before writing to InfluxDB (default: `6`) |
+| `INFLUX_FLUSH_MS` | Max milliseconds before force flush (default: `60000`) |
+| `LOG_LEVEL` | `DEBUG` \| `INFO` \| `WARNING` \| `ERROR` (default: `INFO`) |
+| `LOCATION` | Optional tag added to every data point |
