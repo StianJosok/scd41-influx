@@ -12,7 +12,7 @@ from influxdb_client import InfluxDBClient, Point, WriteOptions
 
 
 # --- config ---
-I2C_DEV = os.getenv("I2C_DEV", "/dev/i2c-1")
+I2C_DEV = "/dev/i2c-1"
 
 INFLUX_URL = os.environ["INFLUX_URL"]
 INFLUX_TOKEN = os.environ["INFLUX_TOKEN"]
@@ -27,8 +27,8 @@ LOCATION = os.getenv("LOCATION", "")  # empty => omit
 
 # Logging behavior
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
-DAILY_LOG_SEC = int(os.getenv("DAILY_LOG_SEC", "86400"))  # once/day
-ERROR_LOG_MIN_INTERVAL_SEC = int(os.getenv("ERROR_LOG_MIN_INTERVAL_SEC", "300"))  # max once/5 min
+DAILY_LOG_SEC = 86400   # heartbeat log interval: once per day
+ERROR_LOG_MIN_INTERVAL_SEC = 300  # suppress repeated error logs: max once per 5 min
 
 # Influx batching (reduce HTTP requests)
 INFLUX_BATCH_SIZE = int(os.getenv("INFLUX_BATCH_SIZE", "6"))   # ~1 minute at 10s interval
