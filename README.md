@@ -18,17 +18,21 @@ Create a `docker-compose.yaml`:
 services:
   scd41_influx:
     image: stianjosok/scd41-influx:latest
+    container_name: scd41-influx
     devices:
       - /dev/i2c-1:/dev/i2c-1
     environment:
-      I2C_DEV: /dev/i2c-1
+      I2C_DEV: /dev/i2c-1          # change if sensor is on a different bus (e.g. /dev/i2c-0)
       INFLUX_URL: ${INFLUX_URL}
       INFLUX_TOKEN: ${INFLUX_TOKEN}
       INFLUX_ORG: ${INFLUX_ORG}
       INFLUX_BUCKET: ${INFLUX_BUCKET}
-      INTERVAL_SEC: "10"
-      MEASUREMENT: "scd41"
-      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      INTERVAL_SEC: "10"            # seconds between readings (min: 5, sensor limitation)
+      MEASUREMENT: "scd41"          # InfluxDB measurement name
+      LOG_LEVEL: INFO               # DEBUG | INFO | WARNING | ERROR
+      # LOCATION: ""               # optional tag added to every data point e.g. livingRoom
+      # INFLUX_BATCH_SIZE: "6"     # points buffered before flushing (~1 min at 10s interval)
+      # INFLUX_FLUSH_MS: "60000"   # max milliseconds before force flush
     group_add:
       - "${I2C_GID:-994}"
     restart: unless-stopped
