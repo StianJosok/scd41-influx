@@ -1,0 +1,4 @@
+.env
+*.md
+info.txt
+docker-compose.yaml
