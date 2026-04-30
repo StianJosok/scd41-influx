@@ -13,9 +13,9 @@ services:
       INTERVAL_SEC: "10"            # seconds between readings (min: 5, sensor limitation)
       MEASUREMENT: "scd41"          # InfluxDB measurement name
       LOG_LEVEL: INFO               # DEBUG | INFO | WARNING | ERROR
+      INFLUX_BATCH_SIZE: "6"        # number of points to buffer before writing to InfluxDB
+      INFLUX_FLUSH_MS: "60000"      # max milliseconds before force flush
       # LOCATION: ""               # optional tag added to every data point e.g. livingRoom
-      # INFLUX_BATCH_SIZE: "6"     # points buffered before flushing (~1 min at 10s interval)
-      # INFLUX_FLUSH_MS: "60000"   # max milliseconds before force flush
     group_add:
       - "${I2C_GID:-994}"
     restart: unless-stopped
