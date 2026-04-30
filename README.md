@@ -28,6 +28,7 @@ services:
       INFLUX_BUCKET: ${INFLUX_BUCKET}
       INTERVAL_SEC: "10"
       MEASUREMENT: "scd41"
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
     group_add:
       - "${I2C_GID:-994}"
     restart: unless-stopped
@@ -39,7 +40,7 @@ Create a `.env` file next to it:
 INFLUX_URL=https://your-influxdb-host
 INFLUX_TOKEN=your-token-here
 INFLUX_ORG=your-org
-INFLUX_BUCKET=scd41
+INFLUX_BUCKET=your-bucket
 ```
 
 Find your I2C GID with `stat /dev/i2c-1 | grep Gid` and set `I2C_GID` in `.env` if it differs from 994.
@@ -49,6 +50,24 @@ Then run:
 ```bash
 docker compose up -d
 ```
+
+## Logging
+
+On a healthy start you will see two log lines and then silence:
+
+```
+INFO init ok: i2c=/dev/i2c-1 serial=... interval=10s ...
+INFO first reading ok: co2=530ppm temp=24.27C rh=37.6%
+```
+
+Silence after that is normal — readings are written to InfluxDB every interval without being logged. After that the only expected output is:
+
+| Log line | When |
+|---|---|
+| `INFO daily ok: co2=...` | Once every 24 hours |
+| `WARNING error: ...` | On read/write failure — at most once per 5 minutes |
+
+Set `LOG_LEVEL=DEBUG` in `.env` to log every reading as it is written.
 
 ## Environment variables
 
@@ -63,4 +82,4 @@ docker compose up -d
 | `INTERVAL_SEC` | no | `10` | Seconds between readings |
 | `MEASUREMENT` | no | `scd41` | InfluxDB measurement name |
 | `LOCATION` | no | — | Optional location tag on data points |
-| `LOG_LEVEL` | no | `INFO` | Logging level |
+| `LOG_LEVEL` | no | `INFO` | Set to `DEBUG` to log every reading |

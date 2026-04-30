@@ -106,6 +106,8 @@ def main():
 
                         write_api.write(bucket=INFLUX_BUCKET, org=INFLUX_ORG, record=p)
 
+                        log.debug("reading: co2=%dppm temp=%.2fC rh=%.1f%%", co2_ppm, temp_c, rh)
+
                         if not first_ok_logged:
                             first_ok_logged = True
                             log.info(

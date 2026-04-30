@@ -1,21 +1,17 @@
 services:
   scd41_influx:
-    image: scd41-influx:latest
+    image: stianjosok/scd41-influx:latest
     devices:
       - /dev/i2c-1:/dev/i2c-1
     environment:
-      # I2C
       I2C_DEV: /dev/i2c-1
-
-      # Influx v2
       INFLUX_URL: ${INFLUX_URL}
       INFLUX_TOKEN: ${INFLUX_TOKEN}
       INFLUX_ORG: ${INFLUX_ORG}
       INFLUX_BUCKET: ${INFLUX_BUCKET}
-
-      # App
       INTERVAL_SEC: "10"
       MEASUREMENT: "scd41"
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
     group_add:
       - "${I2C_GID:-994}"
     restart: unless-stopped
