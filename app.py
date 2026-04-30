@@ -129,8 +129,13 @@ def main():
                             last_error_log = now_mono
                             log.warning("error: %s", e)
 
+        except FileNotFoundError:
+            log.error("device not found: %s — check the devices: bind mount in your compose file", I2C_DEV)
+            return
+        except PermissionError:
+            log.error("permission denied: %s — check that group_add GID matches the i2c group on your host (stat /dev/i2c-1 | grep Gid)", I2C_DEV)
+            return
         finally:
-            # Best-effort flush to reduce risk of losing the last partial batch on shutdown
             try:
                 write_api.flush()
             except Exception:

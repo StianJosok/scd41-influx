@@ -3,9 +3,8 @@ services:
     image: stianjosok/scd41-influx:latest
     container_name: scd41-influx
     devices:
-      - /dev/i2c-1:/dev/i2c-1
+      - /dev/i2c-1:/dev/i2c-1      # left side is the host device — change if your sensor is on a different bus (e.g. /dev/i2c-0:/dev/i2c-1)
     environment:
-      I2C_DEV: /dev/i2c-1          # change if sensor is on a different bus (e.g. /dev/i2c-0)
       INFLUX_URL: ${INFLUX_URL}
       INFLUX_TOKEN: ${INFLUX_TOKEN}
       INFLUX_ORG: ${INFLUX_ORG}
