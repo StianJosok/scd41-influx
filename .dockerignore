@@ -2,3 +2,5 @@
 *.md
 .git/
 docker-compose.yaml
+tests/
+requirements-dev.txt
