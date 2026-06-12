@@ -198,6 +198,7 @@ def main():
                         warn_sensor("sensor error: %r", e)
 
                 # Stopped via SIGTERM/SIGINT — leave the sensor idle
+                log.info("stop requested: stopping sensor, flushing buffered points")
                 try:
                     scd4x.stop_periodic_measurement()
                 except Exception:
@@ -214,6 +215,7 @@ def main():
             # write thread; flush() alone leaves the thread running
             try:
                 write_api.close()
+                log.info("shutdown complete")
             except Exception:
                 pass
 
