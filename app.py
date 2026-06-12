@@ -42,13 +42,33 @@ def utc_now():
     return datetime.now(timezone.utc)
 
 
+class ThrottledWarn:
+    """Rate-limited warning logger; thread-safe so the Influx background
+    write thread and the main loop can share the pattern."""
+
+    def __init__(self, min_interval_sec):
+        self._min_interval = min_interval_sec
+        self._last = 0.0
+        self._lock = threading.Lock()
+
+    def __call__(self, msg, *args):
+        with self._lock:
+            now = time.monotonic()
+            if now - self._last < self._min_interval:
+                return
+            self._last = now
+        log.warning(msg, *args)
+
+
 def main():
     stop = threading.Event()
     signal.signal(signal.SIGTERM, lambda _sig, _frame: stop.set())
     signal.signal(signal.SIGINT, lambda _sig, _frame: stop.set())
 
+    warn_sensor = ThrottledWarn(ERROR_LOG_MIN_INTERVAL_SEC)
+    warn_influx = ThrottledWarn(ERROR_LOG_MIN_INTERVAL_SEC)
+
     last_daily_log = 0.0
-    last_error_log = 0.0
     first_ok_logged = False
     last_values = None  # (co2_ppm, temp_c, rh)
 
@@ -58,7 +78,16 @@ def main():
     )
 
     with InfluxDBClient(url=INFLUX_URL, token=INFLUX_TOKEN, org=INFLUX_ORG) as client:
-        write_api = client.write_api(write_options=write_opts)
+        if not client.ping():
+            log.error("cannot reach InfluxDB at %s — check INFLUX_URL and that the instance is up", INFLUX_URL)
+            return
+
+        # Batching mode writes happen on a background thread; without this
+        # callback a bad token/org/bucket would drop every point silently.
+        write_api = client.write_api(
+            write_options=write_opts,
+            error_callback=lambda _conf, _data, exc: warn_influx("influx write failed: %r", exc),
+        )
 
         try:
             with LinuxI2cTransceiver(I2C_DEV) as i2c_transceiver:
@@ -124,10 +153,7 @@ def main():
                             )
 
                     except Exception as e:
-                        now_mono = time.monotonic()
-                        if now_mono - last_error_log >= ERROR_LOG_MIN_INTERVAL_SEC:
-                            last_error_log = now_mono
-                            log.warning("error: %s", e)
+                        warn_sensor("sensor error: %r", e)
 
         except FileNotFoundError:
             log.error("device not found: %s — check the devices: bind mount in your compose file", I2C_DEV)

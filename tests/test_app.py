@@ -37,6 +37,32 @@ def test_device_permission_denied(caplog):
     assert "permission denied" in caplog.text
 
 
+def test_influx_unreachable(caplog):
+    mock_client = MagicMock()
+    mock_client.__enter__ = MagicMock(return_value=mock_client)
+    mock_client.__exit__ = MagicMock(return_value=False)
+    mock_client.ping.return_value = False
+
+    with patch("app.InfluxDBClient", return_value=mock_client), \
+         patch("app.LinuxI2cTransceiver") as mock_i2c, \
+         patch("app.signal.signal"):
+        with caplog.at_level("ERROR", logger="scd41"):
+            app.main()
+
+    assert "cannot reach InfluxDB" in caplog.text
+    mock_i2c.assert_not_called()
+    mock_client.write_api.assert_not_called()
+
+
+def test_throttled_warn_suppresses_repeats(caplog):
+    warn = app.ThrottledWarn(min_interval_sec=300)
+    with caplog.at_level("WARNING", logger="scd41"):
+        warn("first: %s", "a")
+        warn("second: %s", "b")
+    assert "first: a" in caplog.text
+    assert "second: b" not in caplog.text
+
+
 def test_happy_path_one_reading(caplog):
     mock_stop = _mock_stop_event(iterations=1)
     mock_scd4x = _mock_sensor()

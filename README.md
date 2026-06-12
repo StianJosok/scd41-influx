@@ -68,7 +68,8 @@ Silence after that is normal — readings are written to InfluxDB every interval
 | Log line | When |
 |---|---|
 | `INFO daily ok: co2=...` | Once every 24 hours |
-| `WARNING error: ...` | On read/write failure — at most once per 5 minutes |
+| `WARNING sensor error: ...` | On sensor read failure — at most once per 5 minutes |
+| `WARNING influx write failed: ...` | On InfluxDB write failure (bad token, wrong bucket, outage) — at most once per 5 minutes |
 
 Set `LOG_LEVEL` to `DEBUG` in `docker-compose.yaml` to log every reading as it is written.
 
