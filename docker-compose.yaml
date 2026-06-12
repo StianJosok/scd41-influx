@@ -15,6 +15,10 @@ services:
       INFLUX_BATCH_SIZE: "6"        # number of points to buffer before writing to InfluxDB
       INFLUX_FLUSH_MS: "60000"      # max milliseconds before force flush
       # LOCATION: ""               # optional tag added to every data point e.g. livingRoom
+      # --- sensor calibration — unset = keep the sensor's current setting; see README "Sensor calibration" ---
+      # TEMP_OFFSET_C: "4.0"       # self-heating compensation in °C (sensor factory default: 4.0)
+      # ALTITUDE_M: "0"            # installation altitude in metres for pressure compensation (factory default: 0)
+      # ASC_ENABLED: "false"       # automatic self-calibration — disable if the room never sees outdoor-level CO2 (~400 ppm) weekly
     group_add:
       - "${I2C_GID:-994}"
     restart: unless-stopped

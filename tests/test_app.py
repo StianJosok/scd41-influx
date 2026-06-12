@@ -1,3 +1,5 @@
+import os
+
 import pytest
 from unittest.mock import patch, MagicMock
 
@@ -107,3 +109,52 @@ def test_signal_stops_loop(caplog):
     # once for the clean start, once on shutdown
     assert mock_scd4x.stop_periodic_measurement.call_count == 2
     mock_write_api.close.assert_called_once()
+
+
+def test_calibration_applied_when_set():
+    mock_stop = _mock_stop_event(iterations=0)
+    mock_scd4x = _mock_sensor()
+    mock_client = MagicMock()
+    mock_client.__enter__ = MagicMock(return_value=mock_client)
+    mock_client.__exit__ = MagicMock(return_value=False)
+
+    with patch("app.LinuxI2cTransceiver"), \
+         patch("app.I2cConnection"), \
+         patch("app.Scd4xI2cDevice", return_value=mock_scd4x), \
+         patch("app.InfluxDBClient", return_value=mock_client), \
+         patch("app.threading.Event", return_value=mock_stop), \
+         patch("app.signal.signal"), \
+         patch("app.TEMP_OFFSET_C", 5.5), \
+         patch("app.ALTITUDE_M", 120), \
+         patch("app.ASC_ENABLED", False):
+        app.main()
+
+    mock_scd4x.set_temperature_offset.assert_called_once_with(5.5)
+    mock_scd4x.set_sensor_altitude.assert_called_once_with(120)
+    mock_scd4x.set_automatic_self_calibration.assert_called_once_with(False)
+
+
+def test_calibration_unset_leaves_sensor_untouched():
+    mock_stop = _mock_stop_event(iterations=0)
+    mock_scd4x = _mock_sensor()
+    mock_client = MagicMock()
+    mock_client.__enter__ = MagicMock(return_value=mock_client)
+    mock_client.__exit__ = MagicMock(return_value=False)
+
+    with patch("app.LinuxI2cTransceiver"), \
+         patch("app.I2cConnection"), \
+         patch("app.Scd4xI2cDevice", return_value=mock_scd4x), \
+         patch("app.InfluxDBClient", return_value=mock_client), \
+         patch("app.threading.Event", return_value=mock_stop), \
+         patch("app.signal.signal"):
+        app.main()
+
+    mock_scd4x.set_temperature_offset.assert_not_called()
+    mock_scd4x.set_sensor_altitude.assert_not_called()
+    mock_scd4x.set_automatic_self_calibration.assert_not_called()
+
+
+def test_optional_bool_rejects_invalid_value():
+    with patch.dict(os.environ, {"ASC_ENABLED": "maybe"}):
+        with pytest.raises(ValueError):
+            app._optional_bool("ASC_ENABLED")

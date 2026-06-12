@@ -11,6 +11,27 @@ from sensirion_i2c_scd import Scd4xI2cDevice
 from influxdb_client import InfluxDBClient, Point, WriteOptions
 
 
+def _optional_float(name):
+    raw = os.getenv(name, "").strip()
+    return float(raw) if raw else None
+
+
+def _optional_int(name):
+    raw = os.getenv(name, "").strip()
+    return int(raw) if raw else None
+
+
+def _optional_bool(name):
+    raw = os.getenv(name, "").strip().lower()
+    if not raw:
+        return None
+    if raw in ("true", "1", "yes"):
+        return True
+    if raw in ("false", "0", "no"):
+        return False
+    raise ValueError(f"{name}: expected true/false, got {raw!r}")
+
+
 # --- config ---
 I2C_DEV = "/dev/i2c-1"
 
@@ -24,6 +45,12 @@ MEASUREMENT = os.getenv("MEASUREMENT", "scd41")
 
 # Optional tags (keep minimal)
 LOCATION = os.getenv("LOCATION", "")  # empty => omit
+
+# Sensor calibration — unset means leave the sensor's current setting
+# untouched. See README "Sensor calibration" for defaults and guidance.
+TEMP_OFFSET_C = _optional_float("TEMP_OFFSET_C")
+ALTITUDE_M = _optional_int("ALTITUDE_M")
+ASC_ENABLED = _optional_bool("ASC_ENABLED")
 
 # Logging behavior
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -100,6 +127,23 @@ def main():
                     pass
 
                 serial = scd4x.read_serial_number()
+
+                # Calibration commands only work in idle mode, i.e. here
+                # between stop and start. The sensor holds them in RAM, so
+                # they are reapplied on every start — deliberately not
+                # persisted to EEPROM (limited write endurance).
+                if TEMP_OFFSET_C is not None:
+                    scd4x.set_temperature_offset(TEMP_OFFSET_C)
+                if ALTITUDE_M is not None:
+                    scd4x.set_sensor_altitude(ALTITUDE_M)
+                if ASC_ENABLED is not None:
+                    scd4x.set_automatic_self_calibration(ASC_ENABLED)
+                if (TEMP_OFFSET_C, ALTITUDE_M, ASC_ENABLED) != (None, None, None):
+                    log.info(
+                        "calibration applied: temp_offset_c=%s altitude_m=%s asc=%s",
+                        TEMP_OFFSET_C, ALTITUDE_M, ASC_ENABLED,
+                    )
+
                 scd4x.start_periodic_measurement()
 
                 log.info(

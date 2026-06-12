@@ -32,6 +32,10 @@ services:
       INFLUX_BATCH_SIZE: "6"        # number of points to buffer before writing to InfluxDB
       INFLUX_FLUSH_MS: "60000"      # max milliseconds before force flush
       # LOCATION: ""               # optional tag added to every data point e.g. livingRoom
+      # --- sensor calibration — unset = keep the sensor's current setting; see README "Sensor calibration" ---
+      # TEMP_OFFSET_C: "4.0"       # self-heating compensation in °C (sensor factory default: 4.0)
+      # ALTITUDE_M: "0"            # installation altitude in metres for pressure compensation (factory default: 0)
+      # ASC_ENABLED: "false"       # automatic self-calibration — disable if the room never sees outdoor-level CO2 (~400 ppm) weekly
     group_add:
       - "${I2C_GID:-994}"
     restart: unless-stopped
@@ -88,3 +92,18 @@ Set `LOG_LEVEL` to `DEBUG` in `docker-compose.yaml` to log every reading as it i
 | `INFLUX_FLUSH_MS` | Max milliseconds before force flush (default: `60000`) |
 | `LOG_LEVEL` | `DEBUG` \| `INFO` \| `WARNING` \| `ERROR` (default: `INFO`) |
 | `LOCATION` | Optional tag added to every data point |
+| `TEMP_OFFSET_C` | Optional — see [Sensor calibration](#sensor-calibration) |
+| `ALTITUDE_M` | Optional — see [Sensor calibration](#sensor-calibration) |
+| `ASC_ENABLED` | Optional — see [Sensor calibration](#sensor-calibration) |
+
+## Sensor calibration
+
+**Most people can skip this.** The sensor ships factory-calibrated; when these variables are unset the app leaves its configuration untouched. Details: Sensirion's [SCD4x datasheet](https://sensirion.com/media/documents/48C4B7FB/67FE0194/CD_DS_SCD4x_Datasheet_D1.pdf), sections *On-Chip Output Signal Compensation* and *Field Calibration*.
+
+| Variable | Sensor default | When to set it |
+|---|---|---|
+| `ASC_ENABLED` | on | Automatic self-calibration assumes the sensor sees outdoor-level CO2 (~400 ppm) weekly. In a room that never airs out it skews readings low — set `false` there. |
+| `TEMP_OFFSET_C` | `4.0` | If temperature reads consistently off: new offset = current offset + (reported − actual). |
+| `ALTITUDE_M` | `0` | Installation altitude in metres — improves CO2 accuracy above sea level. |
+
+Settings are applied at every container start while the sensor is idle, and are not persisted to the sensor's EEPROM.
