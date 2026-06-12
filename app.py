@@ -155,6 +155,12 @@ def main():
                     except Exception as e:
                         warn_sensor("sensor error: %r", e)
 
+                # Stopped via SIGTERM/SIGINT — leave the sensor idle
+                try:
+                    scd4x.stop_periodic_measurement()
+                except Exception:
+                    pass
+
         except FileNotFoundError:
             log.error("device not found: %s — check the devices: bind mount in your compose file", I2C_DEV)
             return
@@ -162,8 +168,10 @@ def main():
             log.error("permission denied: %s — check that group_add GID matches the i2c group on your host (stat /dev/i2c-1 | grep Gid)", I2C_DEV)
             return
         finally:
+            # close() flushes remaining points and stops the background
+            # write thread; flush() alone leaves the thread running
             try:
-                write_api.flush()
+                write_api.close()
             except Exception:
                 pass
 

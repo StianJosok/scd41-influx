@@ -87,6 +87,7 @@ def test_happy_path_one_reading(caplog):
 
 def test_signal_stops_loop(caplog):
     mock_stop = _mock_stop_event(iterations=0)
+    mock_scd4x = _mock_sensor()
     mock_write_api = MagicMock()
     mock_client = MagicMock()
     mock_client.__enter__ = MagicMock(return_value=mock_client)
@@ -95,7 +96,7 @@ def test_signal_stops_loop(caplog):
 
     with patch("app.LinuxI2cTransceiver"), \
          patch("app.I2cConnection"), \
-         patch("app.Scd4xI2cDevice", return_value=_mock_sensor()), \
+         patch("app.Scd4xI2cDevice", return_value=mock_scd4x), \
          patch("app.InfluxDBClient", return_value=mock_client), \
          patch("app.threading.Event", return_value=mock_stop), \
          patch("app.signal.signal"):
@@ -103,3 +104,6 @@ def test_signal_stops_loop(caplog):
 
     mock_write_api.write.assert_not_called()
     mock_stop.set.assert_not_called()
+    # once for the clean start, once on shutdown
+    assert mock_scd4x.stop_periodic_measurement.call_count == 2
+    mock_write_api.close.assert_called_once()
