@@ -40,7 +40,7 @@ INFLUX_TOKEN = os.environ["INFLUX_TOKEN"]
 INFLUX_ORG = os.environ["INFLUX_ORG"]
 INFLUX_BUCKET = os.environ["INFLUX_BUCKET"]
 
-INTERVAL_SEC = int(os.getenv("INTERVAL_SEC", "10"))
+INTERVAL_SEC = max(5, int(os.getenv("INTERVAL_SEC", "10")))  # sensor produces data at most every 5s
 MEASUREMENT = os.getenv("MEASUREMENT", "scd41")
 
 # Optional tags (keep minimal)
@@ -97,7 +97,6 @@ def main():
 
     last_daily_log = 0.0
     first_ok_logged = False
-    last_values = None  # (co2_ppm, temp_c, rh)
 
     write_opts = WriteOptions(
         batch_size=INFLUX_BATCH_SIZE,
@@ -160,7 +159,6 @@ def main():
                         co2_ppm = int(round(co2.co2))
                         temp_c = float(temperature.degrees_celsius)
                         rh = float(humidity.percent_rh)
-                        last_values = (co2_ppm, temp_c, rh)
 
                         ts = utc_now()
 
@@ -189,11 +187,11 @@ def main():
                             )
 
                         now_mono = time.monotonic()
-                        if now_mono - last_daily_log >= DAILY_LOG_SEC and last_values is not None:
+                        if now_mono - last_daily_log >= DAILY_LOG_SEC:
                             last_daily_log = now_mono
                             log.info(
                                 "daily ok: co2=%dppm temp=%.2fC rh=%.1f%%",
-                                *last_values,
+                                co2_ppm, temp_c, rh,
                             )
 
                     except Exception as e:
